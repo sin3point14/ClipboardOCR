@@ -1,0 +1,40 @@
+name: GitHub CI
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  release:
+    types: released
+
+jobs:
+  build:
+    name: Build
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 6.0.x
+
+      - name: Build Clipboard OCR (.NET x64)
+        shell: pwsh
+        run: |
+          $msbuildPath = Split-Path (& "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find MSBuild\Current\Bin\amd64\MSBuild.exe | Select-Object -First 1) -Parent
+          $env:PATH = $msbuildPath + ';' + $env:PATH
+          msbuild -v:m -m -restore -p:Configuration=Release
+          New-Item -ItemType Directory -Path C:\builtfiles -Force > $null
+          Compress-Archive -Path ClipboardOCR\bin\Release\net6.0-windows\* -DestinationPath C:\builtfiles\ClipboardOCR-win.zip
+
+      - uses: actions/upload-artifact@v2
+        if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
+        with:
+          name: ClipboardOCR-win
+          path: C:\builtfiles\ClipboardOCR-win.zip
+          if-no-files-found: error
