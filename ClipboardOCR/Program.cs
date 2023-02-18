@@ -3,17 +3,9 @@ using Tesseract;
 
 internal class Program
 {
-    private static void SetStartup()
-    {
-        RegistryKey? rk = Registry.CurrentUser.OpenSubKey
-            (@"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", true);
-
-        rk?.SetValue("ClipboardOCR", Application.ExecutablePath);
-    }
     [STAThreadAttribute]
     private static void Main(string[] args)
     {
-        SetStartup();
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
         Application.Run(new TrayDaemon());
@@ -47,20 +39,46 @@ public class TrayDaemon : ApplicationContext
         Application.Exit();
     }
 
+    private static bool IsStartup()
+    {
+        RegistryKey? rk = Registry.CurrentUser.OpenSubKey
+            (@"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", false);
+
+        return rk?.GetValue("ClipboardOCR") != null;
+    }
+    private static void ToggleStartupState(object? sender, EventArgs e)
+    {
+        RegistryKey? rk = Registry.CurrentUser.OpenSubKey
+            (@"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", true);
+        if (rk is RegistryKey valRk && sender is ToolStripMenuItem item)
+        {
+            if (!IsStartup())
+                valRk.SetValue("ClipboardOCR", Application.ExecutablePath);
+            else
+                valRk.DeleteValue("ClipboardOCR");
+            item.Checked = !item.Checked;
+        }
+    }
+
     public TrayDaemon()
     {
+        var startupItem = new ToolStripMenuItem("Launch on startup", null, ToggleStartupState, "Launch on startup");
+        startupItem.Checked = IsStartup();
+
         trayIcon = new NotifyIcon()
         {
             Icon = new NotifyIcon().Icon = System.Drawing.Icon.ExtractAssociatedIcon(Application.ExecutablePath),
             ContextMenuStrip = new ContextMenuStrip()
             {
-                Items =
-                {
-                    new ToolStripMenuItem("Get Text", null, ClipboardOCR, "Get Text"),
-                    new ToolStripMenuItem("Exit", null, Exit, "Exit"),
+                Items = {
+                        startupItem,
+                        new ToolStripMenuItem("Exit", null, Exit, "Exit")
                 }
             },
-            Visible = true
+            Visible = true,
+            Text = "Clipboard OCR",
+            BalloonTipText = "Click to OCR the latest image in clipboard, Right click for more options"
         };
+        trayIcon.Click += ClipboardOCR;
     }
 }
