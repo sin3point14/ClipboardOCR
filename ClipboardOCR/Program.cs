@@ -15,6 +15,7 @@ internal class Program
 public class TrayDaemon : ApplicationContext
 {
     private NotifyIcon trayIcon;
+    private int hotkeyID;
     private static void ClipboardOCR(object? sender, EventArgs e)
     {
         if (Clipboard.ContainsImage())
@@ -35,6 +36,8 @@ public class TrayDaemon : ApplicationContext
     {
         // Hide tray icon, otherwise it will remain shown until user mouses over it
         trayIcon.Visible = false;
+
+        HotKeyManager.UnregisterHotKey(hotkeyID);
 
         Application.Exit();
     }
@@ -64,6 +67,9 @@ public class TrayDaemon : ApplicationContext
     {
         var startupItem = new ToolStripMenuItem("Launch on startup", null, ToggleStartupState, "Launch on startup");
         startupItem.Checked = IsStartup();
+
+        hotkeyID = HotKeyManager.RegisterHotKey(Keys.V, KeyModifiers.Alt | KeyModifiers.Control);
+        HotKeyManager.HotKeyPressed += ClipboardOCR;
 
         trayIcon = new NotifyIcon()
         {
