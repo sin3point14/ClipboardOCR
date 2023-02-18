@@ -65,6 +65,11 @@ public class TrayDaemon : ApplicationContext
 
     public TrayDaemon()
     {
+        if (!System.IO.File.Exists("./tessdata/eng.traineddata"))
+        {
+            MessageBox.Show("tessdata/eng.traineddata not found", "OCR Model data not found, please check your files.", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            Application.Exit();
+        }
         var startupItem = new ToolStripMenuItem("Launch on startup", null, ToggleStartupState, "Launch on startup");
         startupItem.Checked = IsStartup();
 
