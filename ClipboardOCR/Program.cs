@@ -1,10 +1,19 @@
-﻿using Tesseract;
+﻿using Microsoft.Win32;
+using Tesseract;
 
 internal class Program
-{    
+{
+    private static void SetStartup()
+    {
+        RegistryKey? rk = Registry.CurrentUser.OpenSubKey
+            (@"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", true);
+
+        rk?.SetValue("ClipboardOCR", Application.ExecutablePath);
+    }
     [STAThreadAttribute]
     private static void Main(string[] args)
     {
+        SetStartup();
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
         Application.Run(new TrayDaemon());
