@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 // https://stackoverflow.com/a/3569097
 public class HotKeyManager
 {
-    public static event EventHandler<HotKeyEventArgs> HotKeyPressed;
+    public static event EventHandler<HotKeyEventArgs>? HotKeyPressed;
 
     public static int RegisterHotKey(Keys key, KeyModifiers modifiers)
     {
