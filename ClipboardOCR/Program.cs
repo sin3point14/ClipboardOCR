@@ -16,12 +16,13 @@ public class TrayDaemon : ApplicationContext
 {
     private NotifyIcon trayIcon;
     private int hotkeyID;
-    private static void ClipboardOCR(object? sender, EventArgs e)
+    private string baseDir;
+    private void ClipboardOCR(object? sender, EventArgs e)
     {
         if (Clipboard.ContainsImage())
         {
             var img = (Bitmap)Clipboard.GetImage();
-            using (var engine = new TesseractEngine(@"./tessdata", "eng", EngineMode.Default))
+            using (var engine = new TesseractEngine(baseDir + @"\tessdata", "eng", EngineMode.Default))
             {
                 using (var page = engine.Process(img))
                 {
@@ -65,9 +66,18 @@ public class TrayDaemon : ApplicationContext
 
     public TrayDaemon()
     {
-        if (!System.IO.File.Exists("./tessdata/eng.traineddata"))
+        string? baseDirNullable = System.IO.Path.GetDirectoryName(System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName);
+        if (baseDirNullable is string baseDir)
+            this.baseDir = baseDir;
+        else
         {
-            MessageBox.Show("tessdata/eng.traineddata not found", "OCR Model data not found, please check your files.", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show("Error", "Unable to get base directory", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            Application.Exit();
+        }
+
+        if (!System.IO.File.Exists(this.baseDir + @"\tessdata\eng.traineddata"))
+        {
+            MessageBox.Show("Error: tessdata/eng.traineddata not found", "OCR Model data not found, please check your files.", MessageBoxButtons.OK, MessageBoxIcon.Error);
             Application.Exit();
         }
         var startupItem = new ToolStripMenuItem("Launch on startup", null, ToggleStartupState, "Launch on startup");
